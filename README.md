@@ -192,3 +192,5 @@ The default model is discribed by the following schema:
 By default, the memory part (in red) and the langage part (in blue) are disabled. They can be enabled by setting to `True` the `use_memory` and `use_text` parameters of the model constructor.
 
 This model can be easily adapted to your needs.
+
+TODO : GBLA 
