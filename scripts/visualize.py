@@ -2,6 +2,8 @@ import argparse
 import time
 import numpy
 import torch
+import sys
+sys.path.append("..")
 
 import utils
 

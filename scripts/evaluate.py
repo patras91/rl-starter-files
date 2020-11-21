@@ -2,6 +2,8 @@ import argparse
 import time
 import torch
 from torch_ac.utils.penv import ParallelEnv
+import sys
+sys.path.append("..")
 
 import utils
 

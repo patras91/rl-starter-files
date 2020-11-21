@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions.categorical import Categorical
 import torch_ac
-
+import numpy as np
 
 # Function from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/model.py
 def init_params(m):
@@ -16,12 +16,13 @@ def init_params(m):
 
 
 class ACModel(nn.Module, torch_ac.RecurrentACModel):
-    def __init__(self, obs_space, action_space, use_memory=False, use_text=False):
+    def __init__(self, obs_space, action_space, use_taskDescriptors=False, use_memory=False, use_text=False):
         super().__init__()
 
         # Decide which components are enabled
         self.use_text = use_text
         self.use_memory = use_memory
+        self.use_taskDescriptors = use_taskDescriptors
 
         # Define image embedding
         self.image_conv = nn.Sequential(
@@ -47,6 +48,11 @@ class ACModel(nn.Module, torch_ac.RecurrentACModel):
             self.word_embedding = nn.Embedding(obs_space["text"], self.word_embedding_size)
             self.text_embedding_size = 128
             self.text_rnn = nn.GRU(self.word_embedding_size, self.text_embedding_size, batch_first=True)
+
+        if self.use_taskDescriptors:
+            self.tDes_embedding_size = 20
+            self.tDes_nn = nn.Linear(obs_space["symbols"], self.tDes_embedding_size)
+            self.embedding_size += self.tDes_embedding_size
 
         # Resize image embedding
         self.embedding_size = self.semi_memory_size
@@ -95,6 +101,10 @@ class ACModel(nn.Module, torch_ac.RecurrentACModel):
             embed_text = self._get_embed_text(obs.text)
             embedding = torch.cat((embedding, embed_text), dim=1)
 
+        if self.use_taskDescriptors:
+            embed_tDes = self._get_embed_tDes(obs.taskDescriptors)
+            embedding = torch.cat((embedding, embed_tDes), dim=1)
+
         x = self.actor(embedding)
         dist = Categorical(logits=F.log_softmax(x, dim=1))
 
@@ -106,3 +116,6 @@ class ACModel(nn.Module, torch_ac.RecurrentACModel):
     def _get_embed_text(self, text):
         _, hidden = self.text_rnn(self.word_embedding(text))
         return hidden[-1]
+
+    def _get_embed_tDes(self, tDes):
+        return self.tDes_nn(tDes)

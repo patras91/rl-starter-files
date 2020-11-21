@@ -5,6 +5,8 @@ import torch
 import torch_ac
 import tensorboardX
 import sys
+sys.path.append("../")
+sys.path.append("../../minigrid/")
 
 import utils
 from model import ACModel
@@ -61,6 +63,8 @@ parser.add_argument("--recurrence", type=int, default=1,
                     help="number of time-steps gradient is backpropagated (default: 1). If > 1, a LSTM is added to the model to have memory.")
 parser.add_argument("--text", action="store_true", default=False,
                     help="add a GRU to the model to handle text input")
+parser.add_argument("--tDes", action="store_true", default=False,
+                    help="add a GRU to the model to handle tasDescriptors")
 
 args = parser.parse_args()
 
@@ -118,7 +122,7 @@ txt_logger.info("Observations preprocessor loaded")
 
 # Load model
 
-acmodel = ACModel(obs_space, envs[0].action_space, args.mem, args.text)
+acmodel = ACModel(obs_space, envs[0].action_space, args.tDes, args.mem, args.text)
 if "model_state" in status:
     acmodel.load_state_dict(status["model_state"])
 acmodel.to(device)

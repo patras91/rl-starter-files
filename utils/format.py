@@ -11,6 +11,7 @@ import utils
 
 def get_obss_preprocessor(obs_space):
     # Check if obs_space is an image space
+    print(obs_space.spaces.keys())
     if isinstance(obs_space, gym.spaces.Box):
         obs_space = {"image": obs_space.shape}
 
@@ -21,13 +22,15 @@ def get_obss_preprocessor(obs_space):
 
     # Check if it is a MiniGrid observation space
     elif isinstance(obs_space, gym.spaces.Dict) and list(obs_space.spaces.keys()) == ["image"]:
-        obs_space = {"image": obs_space.spaces["image"].shape, "text": 100}
+        obs_space = {"image": obs_space.spaces["image"].shape, "text": 100, "tDes": 4}
 
         vocab = Vocabulary(obs_space["text"])
         def preprocess_obss(obss, device=None):
             return torch_ac.DictList({
                 "image": preprocess_images([obs["image"] for obs in obss], device=device),
-                "text": preprocess_texts([obs["mission"] for obs in obss], vocab, device=device)
+                "text": preprocess_texts([obs["mission"] for obs in obss], vocab, device=device),
+                "tDes": preprocess_tDes([obs["taskDescriptor"] for obs in obss], device=device)
+
             })
         preprocess_obss.vocab = vocab
 
@@ -59,6 +62,11 @@ def preprocess_texts(texts, vocab, device=None):
         indexed_texts[i, :len(indexed_text)] = indexed_text
 
     return torch.tensor(indexed_texts, device=device, dtype=torch.long)
+
+def preprocess_tDes(tDes, device=None):
+    # Bug of Pytorch: very slow if not first converted to numpy array
+    l = numpy.array(tDes)
+    return torch.tensor(l, device=device, dtype=torch.float)
 
 
 class Vocabulary:
